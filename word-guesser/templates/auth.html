@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ 'Login' if is_login else 'Register' }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            text-align: center;
+        }
+        h1 {
+            color: #1c1e21;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #606770;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #1877f2;
+            box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button[type="submit"]:hover {
+            background-color: #166fe5;
+        }
+        .link-text {
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        .link-text a {
+            color: #1877f2;
+            text-decoration: none;
+        }
+        .link-text a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            color: #fa383e;
+            margin-bottom: 15px;
+        }
+        small {
+            display: block;
+            margin-top: 5px;
+            color: #8a8d91;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ 'Login' if is_login else 'Register' }}</h1>
+        {% if error %}
+        <p class="error-message">{{ error }}</p>
+        {% endif %}
+        <form action="{{ '/login' if is_login else '/register' }}" method="post">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+                {% if not is_login %}
+                <small> (min 5 characters, with alpha, numeric, and one of $,%,*,@)</small>
+                {% endif %}
+            </div>
+            <button type="submit">{{ 'Login' if is_login else 'Register' }}</button>
+        </form>
+        <div class="link-text">
+            {% if is_login %}
+            <a href="/register">Don't have an account? Register here.</a>
+            {% else %}
+            <a href="/login">Already have an account? Login here.</a>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

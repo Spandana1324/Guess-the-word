@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Word Guesser</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .game-board {
+            display: grid;
+            grid-template-rows: repeat(5, 1fr);
+            gap: 5px;
+            margin: 20px auto;
+            width: 300px;
+            height: 350px; /* Adjust height for 5 rows of letters */
+        }
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+        .letter-box {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #333;
+        }
+        .green {
+            background-color: #6aaa64;
+            color: white;
+            border-color: #6aaa64;
+        }
+        .orange {
+            background-color: #c9b458;
+            color: white;
+            border-color: #c9b458;
+        }
+        .grey {
+            background-color: #787c7e;
+            color: white;
+            border-color: #787c7e;
+        }
+        #input-section {
+            margin-top: 20px;
+        }
+        #guess-input {
+            width: 250px;
+            height: 40px;
+            font-size: 20px;
+            text-align: center;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        #submit-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-left: 10px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .action-button {
+            margin: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Word Guesser</h1>
+        {% if daily_limit_reached %}
+            <p class="message" style="color: red;">You have reached your limit of 3 games for today. Better luck tomorrow!</p>
+        {% else %}
+            <div id="game-board" class="game-board"></div>
+            <div id="input-section">
+                <input type="text" id="guess-input" maxlength="5">
+                <button id="submit-btn">Submit</button>
+            </div>
+            <p id="message" class="message"></p>
+            <button id="play-again-btn" class="action-button" style="display:none;">Play Again</button>
+        {% endif %}
+        <button class="action-button" onclick="window.location.href='/logout'">Logout</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameBoard = document.getElementById('game-board');
+            const guessInput = document.getElementById('guess-input');
+            const submitBtn = document.getElementById('submit-btn');
+            const messageEl = document.getElementById('message');
+            const playAgainBtn = document.getElementById('play-again-btn');
+            let guessHistory = [];
+            const MAX_GUESSES = 5;
+
+            function createEmptyBoard() {
+                for (let i = 0; i < MAX_GUESSES; i++) {
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    for (let j = 0; j < 5; j++) {
+                        const letterBox = document.createElement('div');
+                        letterBox.className = 'letter-box';
+                        row.appendChild(letterBox);
+                    }
+                    gameBoard.appendChild(row);
+                }
+            }
+
+            function renderBoard() {
+                const rows = gameBoard.querySelectorAll('.row');
+                guessHistory.forEach((guess, guessIndex) => {
+                    const boxes = rows[guessIndex].querySelectorAll('.letter-box');
+                    guess.result.forEach((letterData, letterIndex) => {
+                        boxes[letterIndex].textContent = letterData.letter;
+                        boxes[letterIndex].classList.add(letterData.color);
+                    });
+                });
+            }
+
+            async function submitGuess() {
+                const guess = guessInput.value.toUpperCase();
+                if (guess.length !== 5) {
+                    messageEl.textContent = "Please enter a 5-letter word.";
+                    return;
+                }
+                
+                // Clear previous messages and disable input
+                messageEl.textContent = '';
+                submitBtn.disabled = true;
+                guessInput.disabled = true;
+
+                try {
+                    const response = await fetch('/submit_guess', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ guess: guess })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        messageEl.textContent = data.error;
+                        submitBtn.disabled = false;
+                        guessInput.disabled = false;
+                        return;
+                    }
+
+                    guessHistory = data.guess_history;
+                    renderBoard();
+                    guessInput.value = '';
+                    
+                    if (data.game_over) {
+                        messageEl.textContent = data.message;
+                        submitBtn.style.display = 'none';
+                        guessInput.style.display = 'none';
+                        playAgainBtn.style.display = 'block';
+                    } else {
+                        submitBtn.disabled = false;
+                        guessInput.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Error submitting guess:', error);
+                    messageEl.textContent = "An error occurred. Please try again.";
+                    submitBtn.disabled = false;
+                    guessInput.disabled = false;
+                }
+            }
+
+            submitBtn.addEventListener('click', submitGuess);
+            guessInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    submitGuess();
+                }
+            });
+
+            playAgainBtn.addEventListener('click', () => {
+                window.location.href = '/play';
+            });
+            
+            // Initial board creation
+            createEmptyBoard();
+        });
+    </script>
+</body>
+</html>

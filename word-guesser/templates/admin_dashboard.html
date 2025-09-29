@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #1c1e21;
+            margin-bottom: 20px;
+        }
+        .report-section {
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        .report-section h2 {
+            border-bottom: 2px solid #dddfe2;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        #daily-report p {
+            font-size: 1.1em;
+            color: #606770;
+            line-height: 1.6;
+        }
+        .user-search {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .user-search input {
+            padding: 10px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 1em;
+            width: 150px;
+        }
+        .user-search button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .user-search button:hover {
+            background-color: #166fe5;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .report-table th, .report-table td {
+            border: 1px solid #dddfe2;
+            padding: 12px;
+            text-align: left;
+        }
+        .report-table th {
+            background-color: #f6f7f9;
+            color: #1c1e21;
+        }
+        #user-report h3 {
+            margin-top: 0;
+        }
+        .logout-btn {
+            padding: 10px 20px;
+            background-color: #fa383e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .logout-btn:hover {
+            background-color: #e52d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome, Admin!</p>
+
+        <div class="report-section">
+            <h2>Daily Report for Today</h2>
+            <div id="daily-report">Loading...</div>
+        </div>
+
+        <div class="report-section">
+            <h2>User Report</h2>
+            <div class="user-search">
+                <input type="number" id="user-id-input" placeholder="Enter User ID">
+                <button onclick="fetchUserReport()">Get Report</button>
+            </div>
+            <div id="user-report"></div>
+        </div>
+        
+        <button class="logout-btn" onclick="window.location.href='/logout'">Logout</button>
+    </div>
+
+    <script>
+        async function fetchDailyReport() {
+            const response = await fetch('/api/daily_report');
+            const data = await response.json();
+            const reportDiv = document.getElementById('daily-report');
+            if (data.error) {
+                reportDiv.textContent = data.error;
+                return;
+            }
+            reportDiv.innerHTML = `
+                <p>Date: ${data.date}</p>
+                <p>Total players who played today: ${data.total_players}</p>
+                <p>Number of correct guesses today: ${data.correct_guesses}</p>
+            `;
+        }
+
+        async function fetchUserReport() {
+            const userId = document.getElementById('user-id-input').value;
+            const reportDiv = document.getElementById('user-report');
+            reportDiv.innerHTML = ''; // Clear previous report
+            if (!userId) {
+                reportDiv.textContent = "Please enter a User ID.";
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/user_report/${userId}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    reportDiv.textContent = data.error;
+                    return;
+                }
+
+                let reportHtml = `<h3>Report for ${data.username}</h3>`;
+                if (data.report.length === 0) {
+                    reportHtml += "<p>No game history found.</p>";
+                } else {
+                    reportHtml += `<table class="report-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Words Tried</th>
+                                            <th>Correct?</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>`;
+                    data.report.forEach(row => {
+                        reportHtml += `<tr><td>${row.date}</td><td>${row.words_tried}</td><td>${row.correct_guess ? 'Yes' : 'No'}</td></tr>`;
+                    });
+                    reportHtml += "</tbody></table>";
+                }
+                reportDiv.innerHTML = reportHtml;
+
+            } catch (error) {
+                console.error("Error fetching user report:", error);
+                reportDiv.textContent = "An error occurred while fetching the report.";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchDailyReport);
+    </script>
+</body>
+</html>
