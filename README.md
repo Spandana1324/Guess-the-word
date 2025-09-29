@@ -1,7 +1,7 @@
 # Guess-the-word
 
 
-1)Project Overview
+1)Project Overview:
 WordQuest is a word-guessing game built using Python (Flask) and SQLite.  
 
 2)It has two user roles:
